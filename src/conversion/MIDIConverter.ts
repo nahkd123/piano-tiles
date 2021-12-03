@@ -1,4 +1,3 @@
-import * as midiFile from "midi-file";
 import * as midiPlayerImport from "midi-player-js";
 import { GameMap, MapInfo } from "../engine/GameMap";
 
@@ -46,7 +45,7 @@ export namespace MIDIConverter {
                 if (event.name == "Set Tempo" && event.data > tempo) tempo = event.data;
                 if (event.name == "Note on") {
                     const lastNoteDelta = totalTicks - lastNoteTick;
-                    if (lastNoteDelta > 0) {
+                    if (lastNoteDelta > ticksPerBeat / 4) {
                         lastNoteTick = totalTicks;
                         if (minNoteDelta == -1 || minNoteDelta > lastNoteDelta) minNoteDelta = lastNoteDelta;
                     }
@@ -77,7 +76,16 @@ export namespace MIDIConverter {
             } else note.midiIndexes.push(midi.index);
         });
 
+        while (tempo > 90) tempo /= 2;
+        while (tempo < 60) tempo *= 2;
         map.initialSpeed = tempo * notesPerBeat / 60;
+
+        // Striping
+        let firstNote = map.notes[0];
+        const reoffset = firstNote.offset;
+        map.notes.forEach((note) => {
+            note.offset -= reoffset;
+        });
         return map;
     }
 
