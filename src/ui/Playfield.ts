@@ -1,3 +1,4 @@
+import {AudioManager} from "../audio/AudioManager";
 import { GameMap } from "../engine/GameMap";
 import { NoteInfo } from "../engine/NoteInfo";
 import { DefaultSkin } from "./Skin";
@@ -116,6 +117,9 @@ export class Playfield {
                 } else {
                     this.score++;
                     this.scoreDisplay.textContent = `${this.score}`;
+                    this.notes[note].midiIndexes?.forEach(midi => {
+                        AudioManager.noteAt(midi, 0);
+                    });
                     if (Math.max(this.notes[note].duration || 1, 1) == 1) {
                         this.hitAnimations.push({
                             note: this.notes[note],
@@ -182,6 +186,8 @@ export class Playfield {
             ctx.translate(-(noteWidth * i), 0);
         }
 
+        let failedNotes = [];
+
         for (let i = 0; i < this.notes.length; i++) {
             if (this.nextNote > i) continue;
             const note = this.notes[i];
@@ -193,6 +199,7 @@ export class Playfield {
                 this.failed = true;
                 this.failedIndex = note.index;
                 this.failedOffset = note.offset;
+                failedNotes.push(note);
             }
             if (noteY + noteBaseHeight * noteDuration < 0) break;
 
@@ -203,6 +210,11 @@ export class Playfield {
             ctx.translate(-noteX, -noteY);
         }
 
+        failedNotes.forEach(n => {
+            const idx = this.notes.indexOf(n);
+            if (idx == -1) return;
+            this.notes.splice(idx, 1);
+        });
 
         this.holdNotes.forEach(hold => {
             const note = hold.note;

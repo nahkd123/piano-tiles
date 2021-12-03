@@ -45,7 +45,7 @@ export namespace MIDIConverter {
                 if (event.name == "Set Tempo" && event.data > tempo) tempo = event.data;
                 if (event.name == "Note on") {
                     const lastNoteDelta = totalTicks - lastNoteTick;
-                    if (lastNoteDelta > ticksPerBeat / 4) {
+                    if (lastNoteDelta > ticksPerBeat / 16) {
                         lastNoteTick = totalTicks;
                         if (minNoteDelta == -1 || minNoteDelta > lastNoteDelta) minNoteDelta = lastNoteDelta;
                     }
@@ -76,9 +76,11 @@ export namespace MIDIConverter {
             } else note.midiIndexes.push(midi.index);
         });
 
-        while (tempo > 90) tempo /= 2;
-        while (tempo < 60) tempo *= 2;
         map.initialSpeed = tempo * notesPerBeat / 60;
+        map.scrollAcceleration = 0.002;
+        // Let's limit at 4n/s
+        while (map.initialSpeed > 6) map.initialSpeed /= 2;
+        while (map.initialSpeed < 1) map.initialSpeed *= 2;
 
         // Striping
         let firstNote = map.notes[0];

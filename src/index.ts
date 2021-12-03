@@ -5,6 +5,11 @@ import { Screen } from "./ui/Screen";
 import { MapInfoScreen } from "./ui/screens/MapInfoScreen";
 import { HomeScreen } from "./ui/screens/HomeScreen";
 import { BACK_BUTTON } from "./ui/BackButton";
+import { AudioManager } from "./audio/AudioManager";
+
+Promise.all([
+    AudioManager.loadSamples()
+]);
 
 document.body.append(BACK_BUTTON.element);
 
