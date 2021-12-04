@@ -1,14 +1,12 @@
 import { GameMap } from "../../engine/GameMap";
 import { BACK_BUTTON } from "../BackButton";
+import { QuickElement } from "../QuickElement";
 import { Screen } from "../Screen";
 import { PlayfieldScreen } from "./PlayfieldScreen";
 
 export class MapInfoScreen extends Screen {
 
     metadata: HTMLDivElement;
-    titleView: HTMLDivElement;
-    mapperView: HTMLDivElement;
-
     diffView: HTMLDivElement;
     speedView: HTMLDivElement;
 
@@ -18,15 +16,7 @@ export class MapInfoScreen extends Screen {
         public map: GameMap
     ) {
         super();
-        this.metadata = document.createElement("div");
-        this.metadata.className = "header";
-        this.titleView = document.createElement("div");
-        this.titleView.className = "title";
-        this.titleView.textContent = map.title;
-        this.mapperView = document.createElement("div");
-        this.mapperView.className = "description";
-        this.mapperView.textContent = `Mapped by ${map.author}`;
-        this.metadata.append(this.titleView, this.mapperView);
+        this.metadata = QuickElement.header(map.title, `Mapped by ${map.author}`);
 
         this.diffView = document.createElement("div");
         this.diffView.className = "diff";
