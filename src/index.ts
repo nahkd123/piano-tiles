@@ -1,9 +1,5 @@
-import { TEST_MAP } from "./engine/GameMap";
 import { SimpleMapStore } from "./engine/MapStore";
-import { Playfield } from "./ui/Playfield";
-import { Screen } from "./ui/Screen";
-import { MapInfoScreen } from "./ui/screens/MapInfoScreen";
-import { HomeScreen } from "./ui/screens/HomeScreen";
+import { ListingScreen } from "./ui/screens/ListingScreen";
 import { BACK_BUTTON } from "./ui/BackButton";
 import { AudioManager } from "./audio/AudioManager";
 
@@ -14,5 +10,5 @@ Promise.all([
 document.body.append(BACK_BUTTON.element);
 
 let mapStore = new SimpleMapStore();
-let screen = new HomeScreen(mapStore);
+let screen = new ListingScreen(mapStore);
 screen.push();

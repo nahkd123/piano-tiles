@@ -19,12 +19,12 @@ export class MapInfoScreen extends Screen {
     ) {
         super();
         this.metadata = document.createElement("div");
-        this.metadata.className = "metadata";
+        this.metadata.className = "header";
         this.titleView = document.createElement("div");
         this.titleView.className = "title";
         this.titleView.textContent = map.title;
         this.mapperView = document.createElement("div");
-        this.mapperView.className = "mapper";
+        this.mapperView.className = "description";
         this.mapperView.textContent = `Mapped by ${map.author}`;
         this.metadata.append(this.titleView, this.mapperView);
 
