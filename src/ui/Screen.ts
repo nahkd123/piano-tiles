@@ -4,6 +4,8 @@ const SCREENS_STACK: Screen[] = [];
 
 export class Screen {
 
+    hideBack = false;
+
     parent: HTMLDivElement;
     contents: HTMLDivElement;
 

@@ -11,7 +11,7 @@ export class BackButton {
 
         this.element.addEventListener("click", () => {
             Screen.pop();
-            if (Screen.getStack().length <= 1) this.hide();
+            if (Screen.getStack().length <= 1 || Screen.getStack().at(-1).hideBack) this.hide();
         });
     }
 

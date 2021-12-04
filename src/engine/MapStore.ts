@@ -18,6 +18,8 @@ export abstract class MapStore {
 
     abstract putMap(map: GameMap): Promise<boolean>;
 
+    abstract deleteMap(map: GameMap): Promise<boolean>;
+
 }
 
 export class SimpleMapStore extends MapStore {
@@ -39,6 +41,15 @@ export class SimpleMapStore extends MapStore {
         if (prevIdx != -1) this.maps.splice(prevIdx, 1, map);
         else this.maps.push(map);
         return true;
+    }
+
+    async deleteMap(map: GameMap) {
+        const prevIdx = this.maps.findIndex(v => v.id == map.id);
+        if (prevIdx != -1) {
+            this.maps.splice(prevIdx, 1);
+            return true;
+        }
+        return false;
     }
 
 }

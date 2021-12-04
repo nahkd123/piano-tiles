@@ -1,7 +1,11 @@
+import { mapStore } from "../..";
 import { GameMap } from "../../engine/GameMap";
+import { Files } from "../../Files";
 import { BACK_BUTTON } from "../BackButton";
 import { QuickElement } from "../QuickElement";
 import { Screen } from "../Screen";
+import { EditScreen } from "./EditScreen";
+import { ListingScreen } from "./ListingScreen";
 import { PlayfieldScreen } from "./PlayfieldScreen";
 
 export class MapInfoScreen extends Screen {
@@ -9,8 +13,6 @@ export class MapInfoScreen extends Screen {
     metadata: HTMLDivElement;
     diffView: HTMLDivElement;
     speedView: HTMLDivElement;
-
-    playButton: HTMLDivElement;
 
     constructor(
         public map: GameMap
@@ -24,22 +26,55 @@ export class MapInfoScreen extends Screen {
         this.speedView.className = "speed";
         this.speedView.textContent = `${map.initialSpeed.toFixed(1)} n/s +${map.scrollAcceleration.toFixed(2)}/s`;
         this.diffView.appendChild(this.speedView);
+        
+        let listing = document.createElement("div");
+        listing.className = "listing";
+        listing.style.overflow = "hidden";
+        
+        let playButton: HTMLDivElement;
+        let editButton: HTMLDivElement;
+        let exportButton: HTMLDivElement;
+        let deleteButton: HTMLDivElement;
 
-        this.playButton = document.createElement("div");
-        this.playButton.className = "button play";
-        this.playButton.textContent = "Start";
+        listing.append(
+            playButton = QuickElement.header("Start", "Play this map", true),
+            QuickElement.header("Modifiers", "Apply modifiers", true),
+            editButton = QuickElement.header("Edit", "Edit this map", true),
+            exportButton = QuickElement.header("Export JSON", "Export this map as JSON", true),
+            deleteButton = QuickElement.header("Delete", "Delete this map", true),
+        );
 
         this.contents.append(
             this.metadata,
-            this.playButton,
-            this.diffView
+            this.diffView,
+            listing
         );
 
-        this.playButton.addEventListener("click", () => {
+        playButton.addEventListener("click", () => {
             BACK_BUTTON.hide();
             Screen.pop();
             let playfieldScreen = new PlayfieldScreen(map);
             playfieldScreen.push();
+        });
+        editButton.addEventListener("click", () => {
+            BACK_BUTTON.hide();
+            Screen.pop(); Screen.pop();
+            let screen = new EditScreen(map);
+            screen.push();
+        });
+        exportButton.addEventListener("click", () => {
+            Files.downloadJSON(map, `${map.title} (${map.author}).json`);
+        });
+        deleteButton.addEventListener("click", async () => {
+            if (!confirm(`Delete ${map.title} (mapped by ${map.author})? You can create backup by exporting it to JSON.`)) return;
+            await mapStore.deleteMap(map);
+
+            Screen.pop();
+            let prevScreen = Screen.getStack().at(-1);
+            if (!prevScreen) return;
+            if (prevScreen instanceof ListingScreen) {
+                prevScreen.applyQuery({});
+            }
         });
     }
 
