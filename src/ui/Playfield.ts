@@ -1,5 +1,6 @@
-import {AudioManager} from "../audio/AudioManager";
+import { AudioManager } from "../audio/AudioManager";
 import { GameMap } from "../engine/GameMap";
+import { Modifier } from "../engine/modifiers/Modifier";
 import { NoteInfo } from "../engine/NoteInfo";
 import { DefaultSkin } from "./Skin";
 
@@ -7,6 +8,8 @@ import { DefaultSkin } from "./Skin";
  * A simple playfield. It can also be used as editor (if you wish)
  */
 export class Playfield {
+
+    modifiersStorage: Record<string, any> = {};
 
     container: HTMLDivElement;
     scoreDisplay: HTMLDivElement;
@@ -38,11 +41,18 @@ export class Playfield {
             initialSpeed: map.initialSpeed,
             scrollAcceleration: map.scrollAcceleration,
             judgementLine: false,
-            lanes: 4,
+            modifiers: [],
             ...options
         };
-        this.notes = [...map.notes];
-        this.lastNote = this.notes[this.notes.length - 1];
+        this.options.modifiers.forEach(mod => mod.modifyOptions(this.options));
+
+        this.lastNote = {
+            index: 0,
+            offset: -9,
+            midi: [],
+            duration: 1
+        };
+        this.applyLoop();
         this.scrollPosition = this.scrollPositionAtTime(0);
 
         this.container = document.createElement("div");
@@ -75,7 +85,7 @@ export class Playfield {
             
             const width = this.canvas.width;
             const height = this.canvas.height;
-            const noteWidth = width / this.options.lanes;
+            const noteWidth = width / 4;
             const noteBaseHeight = noteWidth * 1.75;
             const hold = this.holdNotes[holdIdx];
             const note = hold.note;
@@ -100,7 +110,7 @@ export class Playfield {
             const width = this.canvas.offsetWidth;
             const height = this.canvas.offsetHeight;
 
-            const noteWidth = width / this.options.lanes;
+            const noteWidth = width / 4;
             const noteHeight = noteWidth * 1.75;
             const noteIndex = Math.floor(event.offsetX / noteWidth);
             const noteOffset = (height - event.offsetY) / noteHeight + this.scrollPosition;
@@ -110,7 +120,7 @@ export class Playfield {
             const note = this.noteAt(noteOffset, noteIndex);
             if (note != -1) {
                 const prevNote = this.notes[note - 1];
-                if (prevNote && prevNote.offset < this.notes[note].offset) {
+                if (prevNote && prevNote.offset < this.notes[note].offset && this.checkFail()) {
                     this.failed = true;
                     this.failedIndex = noteIndex;
                     this.failedOffset = Math.floor(noteOffset);
@@ -135,7 +145,7 @@ export class Playfield {
                 }
                 this.notes.splice(note, 1);
                 this.applyLoop();
-            } else {
+            } else if (this.checkFail()) {
                 this.failed = true;
                 this.failedIndex = noteIndex;
                 this.failedOffset = Math.floor(noteOffset);
@@ -143,6 +153,12 @@ export class Playfield {
 
             if (!this.isStarted) this.start();
         });
+    }
+
+    checkFail() {
+        if (this.options.modifiers.length == 0) return true;
+        for (let i = 0; i < this.options.modifiers.length; i++) if (this.options.modifiers[i].onNoteMiss(this)) return true;
+        return false;
     }
 
     renderCanvas() {
@@ -157,7 +173,7 @@ export class Playfield {
 
         const width = this.canvas.width;
         const height = this.canvas.height;
-        const noteWidth = width / this.options.lanes;
+        const noteWidth = width / 4;
         const noteBaseHeight = noteWidth * 1.75;
         const renderScale = noteWidth / 100;
         
@@ -186,7 +202,7 @@ export class Playfield {
             ctx.translate(-(noteWidth * i), 0);
         }
 
-        let failedNotes = [];
+        let missedNotes = [];
 
         for (let i = 0; i < this.notes.length; i++) {
             if (this.nextNote > i) continue;
@@ -196,10 +212,12 @@ export class Playfield {
             const noteX = noteWidth * note.index;
             const noteY = height - (note.offset + noteDuration - this.scrollPosition) * noteBaseHeight;
             if (noteY > height) {
-                this.failed = true;
-                this.failedIndex = note.index;
-                this.failedOffset = note.offset;
-                failedNotes.push(note);
+                if (this.checkFail()) {
+                    this.failed = true;
+                    this.failedIndex = note.index;
+                    this.failedOffset = note.offset;
+                }
+                missedNotes.push(note);
             }
             if (noteY + noteBaseHeight * noteDuration < 0) break;
 
@@ -210,11 +228,12 @@ export class Playfield {
             ctx.translate(-noteX, -noteY);
         }
 
-        failedNotes.forEach(n => {
+        for (let i = 0; i < missedNotes.length; i++) {
+            const n = missedNotes[i];
             const idx = this.notes.indexOf(n);
             if (idx == -1) return;
             this.notes.splice(idx, 1);
-        });
+        }
 
         this.holdNotes.forEach(hold => {
             const note = hold.note;
@@ -265,7 +284,7 @@ export class Playfield {
             const ctx = this.ctx;
             const width = this.canvas.width;
             const height = this.canvas.height;
-            const noteWidth = width / this.options.lanes;
+            const noteWidth = width / 4;
             const noteHeight = noteWidth * 1.75;
             const renderScale = noteWidth / 100;
 
@@ -326,6 +345,7 @@ export class Playfield {
             });
         });
         this.lastNote = this.notes[this.notes.length - 1];
+        this.options.modifiers.forEach(mod => mod.processNotes(this.notes));
     }
 
 }
@@ -335,7 +355,7 @@ export interface PlayfieldOptions {
     initialSpeed?: number;
     scrollAcceleration?: number;
     judgementLine?: boolean;
-    lanes?: number;
+    modifiers?: Modifier[];
 
 }
 

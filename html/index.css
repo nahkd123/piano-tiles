@@ -82,7 +82,11 @@ html, body {
 }
 .header {
     background-color: #ffe7c7;
+    transition: 0.1s linear background-color;
     /* TODO: Set metadata to map background because yes. */
+}
+.header.selected {
+    background-color: var(--selected-color);
 }
 .header > .title { font-size: 1.6em; }
 .header > .description { font-size: 0.9em; color: #4c4c4c; }
