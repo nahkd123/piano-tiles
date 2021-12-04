@@ -17,14 +17,19 @@ export namespace AudioManager {
     }
 
     export function playCheck() { if (Context.state != "running") Context.resume(); }
-    export function noteAt(midi: number, delay: number) {
+    export function noteAt(midi: number, delay: number, velocity: number) {
         if (!PIANO_SAMPLE) return;
         playCheck();
 
         let node = Context.createBufferSource();
         node.buffer = PIANO_SAMPLE;
         node.detune.value = (midi - 72) * 100;
-        node.connect(Context.destination);
+
+        let gain = Context.createGain();
+        gain.gain.value = velocity;
+
+        node.connect(gain);
+        gain.connect(Context.destination);
         node.start(delay);
     }
 

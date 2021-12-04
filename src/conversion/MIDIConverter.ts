@@ -8,6 +8,13 @@ let midiPlayer: {
 //@ts-ignore
 } = midiPlayerImport.default;
 
+type MIDINote = {
+    tick: number,
+    index: number,
+    velocity: number,
+    duration: number
+};
+
 /**
  * Convert MIDI file to playable map
  */
@@ -26,10 +33,7 @@ export namespace MIDIConverter {
         let events = player.getEvents() as unknown as midiPlayerImport.Event[][];
 
         // Stage 1
-        let midiNotes: {
-            tick: number,
-            index: number
-        }[] = [];
+        let midiNotes: MIDINote[] = [];
 
         let tempo = 30;
         let minNoteDelta = -1;
@@ -37,6 +41,7 @@ export namespace MIDIConverter {
         events.forEach(track => {
             let totalTicks = 0;
             let lastNoteTick = 0;
+            let holdingNotes: MIDINote[] = [];
 
             for (let i = 0; i < track.length; i++) {
                 const event = track[i];
@@ -44,26 +49,37 @@ export namespace MIDIConverter {
                 const delta = event.delta;
                 totalTicks += delta;
                 if (event.name == "Set Tempo" && event.data > tempo) tempo = event.data;
-                if (event.name == "Note on") {
-                    if (event.velocity < 0.5) continue;
+
+                function noteOnTrigger() {
                     const lastNoteDelta = totalTicks - lastNoteTick;
                     if (lastNoteDelta > 0) {
                         lastNoteTick = totalTicks;
                         if (minNoteDelta == -1 || minNoteDelta > lastNoteDelta) minNoteDelta = lastNoteDelta;
                     }
-                    midiNotes.push({
+                    holdingNotes.push({
                         tick: totalTicks,
-                        index: event.noteNumber
+                        index: event.noteNumber,
+                        velocity: event.velocity || 100,
+                        duration: -1
                     });
                 }
-                if (event.name == "Note off") {
-                    // TODO: Implement hold note conversion
+                function noteOffTrigger() {
+                    let noteIdx = holdingNotes.findIndex(v => v.index == event.noteNumber);
+                    if (noteIdx == -1) return;
+                    let [note] = holdingNotes.splice(noteIdx, 1);
+                    note.duration = totalTicks - note.tick;
+                    midiNotes.push(note);
                 }
+
+                if (event.name == "Note on") {
+                    if (event.velocity <= 0) noteOffTrigger();
+                    else noteOnTrigger();
+                }
+                if (event.name == "Note off") { noteOffTrigger(); }
             }
         });
         if (minNoteDelta == -1) minNoteDelta = ticksPerBeat / 4;
         const notesPerBeat = ticksPerBeat / minNoteDelta;
-        console.log(tempo, notesPerBeat, midiNotes);
 
         map.initialSpeed = tempo * notesPerBeat / 60;
         map.scrollAcceleration = 0.002;
@@ -77,38 +93,41 @@ export namespace MIDIConverter {
             noteOffScale *= 2;
         }
         
-        function findAll(offset: number) {
-            let out: NoteInfo[] = [];
-            map.notes.forEach(v => {
-                if (v.offset == offset) out.push(v);
-            });
-            return out;
-        }
         midiNotes.forEach((midi, idx) => {
             const lane = midi.index % 4;
             const offset = Math.floor(midi.tick / minNoteDelta * noteOffScale);
+            const duration = Math.max(Math.floor(midi.duration / minNoteDelta * noteOffScale), 1);
             let note = map.notes.find(v => v.offset == offset);
             if (!note) {
-                let note = {
+                let note: NoteInfo = {
                     index: lane,
                     offset,
-                    midiIndexes: [midi.index],
+                    midi: [{ index: midi.index, velocity: midi.velocity / 100 }],
                     duration: 1
                 };
                 map.notes.push(note);
             } else {
-                note.midiIndexes.push(midi.index);
-                let totalMid = note.midiIndexes.reduce((a, b) => a + b);
+                note.midi.push({ index: midi.index, velocity: midi.velocity / 100 });
+                let totalMid = 0;
+                note.midi.forEach(a => totalMid += a.index);
                 note.index = totalMid % 4;
+                if (duration > note.duration) note.duration = duration;
             }
         });
 
         // Striping
         let firstNote = map.notes[0];
         const reoffset = firstNote.offset;
-        map.notes.forEach((note) => {
-            note.offset -= reoffset;
+        map.notes.forEach((note) => { note.offset -= reoffset; });
+
+        // Finalize
+        map.notes.sort((a, b) => a.offset - b.offset);
+        map.notes.forEach((note, i) => {
+            let prev = map.notes[i - 1];
+            if (!prev) return;
+            if (prev.offset + prev.duration > note.offset) prev.duration = note.offset - prev.offset;
         });
+
         return map;
     }
 

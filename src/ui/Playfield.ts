@@ -117,8 +117,8 @@ export class Playfield {
                 } else {
                     this.score++;
                     this.scoreDisplay.textContent = `${this.score}`;
-                    this.notes[note].midiIndexes?.forEach(midi => {
-                        AudioManager.noteAt(midi, 0);
+                    this.notes[note].midi?.forEach(midi => {
+                        AudioManager.noteAt(midi.index, 0, midi.velocity);
                     });
                     if (Math.max(this.notes[note].duration || 1, 1) == 1) {
                         this.hitAnimations.push({

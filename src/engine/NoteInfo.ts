@@ -10,6 +10,13 @@ export interface NoteInfo {
     index: number;
 
     /** MIDI note indexes to play key sound. -1 for no sound, 0 for C0, 1 for D0, etc. */
-    midiIndexes: number[];
+    midi: MIDINoteInfo[];
+
+}
+
+export interface MIDINoteInfo {
+
+    index: number;
+    velocity: number;
 
 }
