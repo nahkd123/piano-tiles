@@ -1,5 +1,4 @@
-import { SimpleMapStore } from "./engine/MapStore";
-import { ListingScreen } from "./ui/screens/ListingScreen";
+import { IDBMapStore } from "./engine/MapStore";
 import { BACK_BUTTON } from "./ui/BackButton";
 import { AudioManager } from "./audio/AudioManager";
 import { HomeScreen } from "./ui/screens/HomeScreen";
@@ -11,10 +10,11 @@ import { ModConstantSpeed } from "./engine/modifiers/ModConstantSpeed";
 import { ModDoubleSpeed } from "./engine/modifiers/ModDoubleSpeed";
 import { ModLives } from "./engine/modifiers/ModLives";
 
-export const mapStore = new SimpleMapStore();
+export const mapStore = new IDBMapStore();
 
 Promise.all([
-    AudioManager.loadSamples()
+    AudioManager.loadSamples(),
+    mapStore.loadIDB()
 ]).then(() => {
     Modifier.registerModifier(new ModNoFail());
     Modifier.registerModifier(new ModLives());

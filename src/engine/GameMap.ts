@@ -20,6 +20,7 @@ export interface GameMap extends MapInfo {
 export const TEST_MAP: GameMap = {
     title: "Test Map",
     author: "nahkd123",
+    id: "default-test-map",
 
     initialSpeed: 1.6,
     scrollAcceleration: 0.02,
