@@ -4,6 +4,7 @@ import { GameMap } from "../../engine/GameMap";
 import { MIDINoteInfo, NoteInfo } from "../../engine/NoteInfo";
 import { Files } from "../../Files";
 import { BACK_BUTTON } from "../BackButton";
+import { DesktopEditor } from "../desktop/editor/DesktopEditor";
 import { QuickElement } from "../QuickElement";
 import { Screen } from "../Screen";
 import { PlayfieldScreen } from "./PlayfieldScreen";
@@ -455,6 +456,7 @@ export class EditOptionsScreen extends Screen {
         let setSpeedButton: HTMLDivElement;
         let setAccelButton: HTMLDivElement;
         let exportButton: HTMLDivElement;
+        let desktopEditorButton: HTMLDivElement;
 
         listing.append(
             testButton = QuickElement.header("Test", "Open the player so you can test it", true),
@@ -463,6 +465,7 @@ export class EditOptionsScreen extends Screen {
             setSpeedButton = QuickElement.header("Set Speed", "Set initial speed (notes/s)", true),
             setAccelButton = QuickElement.header("Set Acceleration", "Set speed acceleration (notes/s^2)", true),
             exportButton = QuickElement.header("Export JSON", "Export as JSON", true),
+            desktopEditorButton = QuickElement.header("Desktop Editor", "Open the advanced editor. Works best on desktop", true),
         );
 
         testButton.addEventListener("click", () => {
@@ -482,6 +485,8 @@ export class EditOptionsScreen extends Screen {
         exportButton.addEventListener("click", () => {
             Files.downloadJSON(editor.map, `${editor.map.title} (${editor.map.author}).json`);
         });
+
+        desktopEditorButton.addEventListener("click", () => new DesktopEditor(this.editor).open());
 
         this.contents.append(
             QuickElement.header("Edit Options", "Select an option or go back"),

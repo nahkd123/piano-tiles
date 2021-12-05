@@ -3,6 +3,7 @@ import { GameMap } from "../../engine/GameMap";
 import { Modifier } from "../../engine/modifiers/Modifier";
 import { Files } from "../../Files";
 import { BACK_BUTTON } from "../BackButton";
+import { DesktopEditor } from "../desktop/editor/DesktopEditor";
 import { QuickElement } from "../QuickElement";
 import { Screen } from "../Screen";
 import { EditScreen } from "./EditScreen";
@@ -65,11 +66,12 @@ export class MapInfoScreen extends Screen {
             let screen = new ModifiersScreen(this.modifiers);
             screen.push();
         });
-        editButton.addEventListener("click", () => {
+        editButton.addEventListener("click", (event) => {
             BACK_BUTTON.hide();
             Screen.pop(); Screen.pop();
             let screen = new EditScreen(map);
-            screen.push();
+            if (event.shiftKey) new DesktopEditor(screen).open();
+            else screen.push();
         });
         exportButton.addEventListener("click", () => {
             Files.downloadJSON(map, `${map.title} (${map.author}).json`);

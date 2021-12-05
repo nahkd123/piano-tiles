@@ -1,5 +1,6 @@
 @import url("./typefaces.css");
 @import url("./editor.css");
+@import url("./desktop-editor.css");
 
 html, body {
     margin: 0;
@@ -18,11 +19,16 @@ html, body {
     }
     body {
         background-color: white;
-        aspect-ratio: 9 / 16;
-        width: unset;
+        width: calc(100vh / 16 * 9);
         margin: 0 auto;
         border-left: 0.4em solid #202020;
         border-right: 0.4em solid #202020;
+        transition: 0.2s ease width;
+    }
+    body.desktop {
+        aspect-ratio: unset;
+        width: 100%;
+        border: none;
     }
 }
 
