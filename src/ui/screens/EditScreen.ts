@@ -30,6 +30,12 @@ export class EditScreen extends Screen {
     ghostNote: NoteInfo;
     targetNote: NoteInfo;
 
+    // Playback always in constant speed
+    playedNotes: NoteInfo[] = [];
+    playing = false;
+    playTimestamp = -1;
+    keyPressHandler: (event: KeyboardEvent) => void;
+
     constructor(
         public map: GameMap
     ) {
@@ -195,7 +201,20 @@ export class EditScreen extends Screen {
             if (this.scroll < 0) this.scroll = 0;
             this.processAnimation();
         });
-        console.log(this);
+        document.addEventListener("keypress", this.keyPressHandler = (event) => {
+            if (event.code == "Space") this.togglePlay();
+        });
+    }
+
+    togglePlay() {
+        if (!this.playing) {
+            this.playing = true;
+            this.playTimestamp = Date.now();
+            this.playedNotes = [];
+            this.processAnimation();
+        } else {
+            this.playing = false;
+        }
     }
 
     animating = false;
@@ -213,6 +232,25 @@ export class EditScreen extends Screen {
                 this.scroll = this.smoothScrollTo;
             } else {
                 this.scroll = this.smoothScrollTo * 0.1 + this.scroll * 0.9;
+            }
+
+            if (this.playing) {
+                nextFrame = true;
+                if (this.playTimestamp == -1) this.playTimestamp = Date.now();
+                else {
+                    const deltaSec = (Date.now() - this.playTimestamp) / 1000;
+                    this.playTimestamp = Date.now();
+                    const scrollAdd = deltaSec * this.map.initialSpeed;
+
+                    const notes = this.unplayedNotesAt(this.scroll);
+                    notes.forEach(n => {
+                        n.midi.forEach(mid => AudioManager.noteAt(mid.index, 0, mid.velocity));
+                        this.playedNotes.push(n);
+                    });
+
+                    this.scroll += scrollAdd;
+                    this.smoothScrollTo = this.scroll;
+                }
             }
 
             if (nextFrame) window.requestAnimationFrame(render);
@@ -233,7 +271,11 @@ export class EditScreen extends Screen {
             const noteName = NOTES_NAMING[(BEGIN_OFFSET + note) % NOTES_NAMING.length];
             let e = document.createElement("div");
             e.id = `${21 + note}`;
-            if (noteName == "C") e.textContent = `${Math.floor((BEGIN_OFFSET + note) / NOTES_NAMING.length)}`;
+            if (!noteName.includes("#")) {
+                if (noteName == "C") e.textContent = `C${Math.floor((BEGIN_OFFSET + note) / NOTES_NAMING.length)}`;
+                else e.textContent = noteName;
+            }
+
             e.style.setProperty("--note-offset", `${whiteNoteIndex}`);
             e.className = "note";
             if (noteName.includes("#")) {
@@ -388,6 +430,14 @@ export class EditScreen extends Screen {
 
         this.ctx.resetTransform();
         // We're now in px coord space
+    }
+
+    unplayedNotesAt(offset: number) {
+        return this.map.notes.filter(v =>
+            !this.playedNotes.includes(v) &&
+            offset >= v.offset &&
+            offset < (v.offset + (v.duration || 1))
+        );
     }
 
 }
