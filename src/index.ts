@@ -9,6 +9,7 @@ import { ModShuffle } from "./engine/modifiers/ModShuffle";
 import { ModConstantSpeed } from "./engine/modifiers/ModConstantSpeed";
 import { ModDoubleSpeed } from "./engine/modifiers/ModDoubleSpeed";
 import { ModLives } from "./engine/modifiers/ModLives";
+import { ModJudgementLine } from "./engine/modifiers/ModJudgementLine";
 
 export const mapStore = new IDBMapStore();
 
@@ -22,6 +23,7 @@ Promise.all([
     Modifier.registerModifier(new ModConstantSpeed());
     Modifier.registerModifier(new ModDoubleSpeed());
     Modifier.registerModifier(new ModShuffle());
+    Modifier.registerModifier(new ModJudgementLine());
 
     document.body.append(BACK_BUTTON.element);
     let screen = new HomeScreen();

@@ -73,6 +73,20 @@ export abstract class Skin {
         ctx.fillRect(0, -0.1, 100, 0.2);
     }
 
+    /**
+     * Draw the judgement line with width = 100pt and center is located at ``y = 0``
+     * @param ctx The canvas context
+     */
+    drawJudgementLine(ctx: CanvasRenderingContext2D) {
+        ctx.fillStyle = "#ffffff5e";
+        ctx.fillRect(0, -1, 100, 2);
+        
+        ctx.fillStyle = "#0000005e";
+        ctx.fillRect(0, -2, 100, 1);
+        ctx.fillRect(0, 1, 100, 1);
+        
+    }
+
     /** Draw the lane seperator with height = 100pt and center is located at ``x = 0`` */
     drawLaneSeperator(ctx: CanvasRenderingContext2D) {
         ctx.fillStyle = "#0000000e";

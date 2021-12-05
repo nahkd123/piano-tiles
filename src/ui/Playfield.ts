@@ -33,6 +33,9 @@ export class Playfield {
     failed = false; failedIndex = -1; failedOffset = -1; failedTime = -1;
     failedCallback: () => any;
 
+    globalKeyDownHandler: (event: KeyboardEvent) => any;
+    globalKeyUpHandler: (event: KeyboardEvent) => any;
+
     constructor(
         public map: GameMap,
         public options: PlayfieldOptions = {}
@@ -114,11 +117,18 @@ export class Playfield {
             const noteHeight = noteWidth * 1.75;
             const noteIndex = Math.floor(event.offsetX / noteWidth);
             const noteOffset = (height - event.offsetY) / noteHeight + this.scrollPosition;
+            const judgementLineOffset = this.scrollPosition + 1;
+            const inJudgementLine = noteOffset >= judgementLineOffset && noteOffset <= judgementLineOffset + 1;
 
             this.debugIndex = noteIndex;
             this.debugOffset = noteOffset;
             const note = this.noteAt(noteOffset, noteIndex);
             if (note != -1) {
+                if (this.options.judgementLine && !inJudgementLine) {
+                    navigator.vibrate([80]);
+                    return;
+                }
+
                 const prevNote = this.notes[note - 1];
                 if (prevNote && prevNote.offset < this.notes[note].offset && this.checkFail()) {
                     this.failed = true;
@@ -153,6 +163,94 @@ export class Playfield {
 
             if (!this.isStarted) this.start();
         });
+
+        if (this.options.judgementLine) {
+            const keysMap = {
+                "KeyD": 0, "KeyF": 1,
+                "KeyJ": 2, "KeyK": 3
+            };
+            const holdingKeys = {};
+
+            document.addEventListener("keydown", this.globalKeyDownHandler = (event) => {
+                if (this.failed) return;
+                if (keysMap[event.code] == null) return;
+                if (holdingKeys[event.code] == true) return;
+                
+                const width = this.canvas.offsetWidth;
+                const height = this.canvas.offsetHeight;
+
+                const noteWidth = width / 4;
+                const noteHeight = noteWidth * 1.75;
+
+                holdingKeys[event.code] = true;
+                const noteIndex = keysMap[event.code];
+                const judgementLineOffset = this.scrollPosition + 1.5;
+                const noteIdx = this.noteAt(judgementLineOffset, noteIndex);
+                if (noteIdx == -1) {
+                    if (this.checkFail()) {
+                        this.failed = true;
+                        this.failedIndex = noteIndex;
+                        this.failedOffset = Math.floor(judgementLineOffset);
+                    }
+                    return;
+                }
+
+                const note = this.notes[noteIdx];
+                const prevNote = this.notes[noteIdx - 1];
+                if (prevNote && prevNote.offset < note.offset && this.checkFail()) {
+                    this.failed = true;
+                    this.failedIndex = noteIndex;
+                    this.failedOffset = note.offset;
+                    return;
+                }
+
+                this.score++;
+                this.scoreDisplay.textContent = `${this.score}`;
+                note.midi?.forEach(midi => AudioManager.noteAt(midi.index, 0, midi.velocity));
+
+                if (Math.max(note.duration || 1, 1) == 1) {
+                    this.hitAnimations.push({ note, timestamp: -1 });
+                } else {
+                    this.holdNotes.push({
+                        note,
+                        pointerId: -(noteIndex + 1),
+                        pointerY: height - noteHeight * 1.5
+                    });
+                }
+                this.notes.splice(noteIdx, 1);
+                this.applyLoop();
+                if (!this.isStarted) this.start();
+            });
+            document.addEventListener("keyup", this.globalKeyUpHandler = (event) => {
+                if (keysMap[event.code] == null) return;
+                holdingKeys[event.code] = false;
+                
+                const noteIndex = keysMap[event.code];
+                const holdIdx = this.holdNotes.findIndex(v => v.pointerId == -(noteIndex + 1));
+                if (holdIdx == -1) return;
+
+                const width = this.canvas.width;
+                const height = this.canvas.height;
+                const noteWidth = width / 4;
+                const noteBaseHeight = noteWidth * 1.75;
+                const hold = this.holdNotes[holdIdx];
+                const note = hold.note;
+                const noteDuration = Math.max(note.duration || 1, 1);
+                const noteY = height - (note.offset + noteDuration - this.scrollPosition) * noteBaseHeight;
+                const pointerCHeight = Math.floor(hold.pointerY * this.canvasScale);
+                const prog = 1 - (pointerCHeight - noteY) / (noteBaseHeight * noteDuration);
+                this.hitAnimations.push({
+                    note: hold.note,
+                    timestamp: -1,
+                    holdProgress: prog
+                });
+
+                this.score += Math.floor((noteDuration - 1) * (prog + 0.5)); // TODO: add based on prog
+                this.scoreDisplay.textContent = `${this.score}`;
+
+                this.holdNotes.splice(holdIdx, 1);
+            });
+        }
     }
 
     checkFail() {
@@ -203,6 +301,7 @@ export class Playfield {
 
         let missedNotes = [];
 
+        // Notes
         for (let i = 0; i < this.notes.length; i++) {
             if (this.nextNote > i) continue;
             const note = this.notes[i];
@@ -250,6 +349,15 @@ export class Playfield {
             ctx.scale(1/renderScale, 1/renderScale);
             ctx.translate(-noteX, -noteY);
         });
+
+        // Judgement Line
+        if (this.options.judgementLine) {
+            ctx.translate(0, height - 1.5 * noteBaseHeight);
+            ctx.scale(width / 100, height / 100);
+            this.skin.drawJudgementLine(ctx);
+            ctx.scale(100 / width, 100 / height);
+            ctx.translate(0, -(height - 2 * noteBaseHeight));
+        }
 
         ctx.resetTransform();
     }
@@ -302,6 +410,10 @@ export class Playfield {
                 ctx.fillStyle = `hsla(0, 100%, ${50 + Math.abs(Math.sin(failedDuration / 200) * 30)}%, ${failAlpha})`;
                 ctx.fillRect(this.failedIndex * noteWidth, height - (this.failedOffset + 1 - this.scrollPosition) * noteHeight, noteWidth, noteHeight);
                 if (failedDuration > 1800) {
+                    if (this.options.judgementLine) {
+                        document.removeEventListener("keydown", this.globalKeyDownHandler);
+                        document.removeEventListener("keyup", this.globalKeyUpHandler);
+                    }
                     if (this.failedCallback) this.failedCallback();
                     return;
                 }

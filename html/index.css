@@ -110,7 +110,8 @@ html, body {
 
 .listing {
     padding: 1em;
-    height: calc(100% - 2em - 1.6em - 0.8em - 2em);
+    padding-bottom: 2em;
+    height: calc(100% - 3em - 1.6em - 0.8em - 2em);
     overflow-y: scroll;
 }
 
