@@ -4,7 +4,8 @@
         "target": "ESNext",
         "incremental": true,
         "outDir": "dist",
-        "experimentalDecorators": true
+        "experimentalDecorators": true,
+        "resolveJsonModule": true
     },
     "include": [
         "src"

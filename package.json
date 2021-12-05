@@ -3,14 +3,28 @@
   "version": "0.0.1",
   "description": "Piano Tiles",
   "main": "dist/index.js",
+  "author": "nahkd123",
+  "license": "GPL-3.0-or-later",
+  "homepage": "https://github.com/nahkd123/piano-tiles",
+  "repository": {
+    "url": "git://github.com/nahkd123/piano-tiles.git"
+  },
+  "bugs": {
+    "url": "https://github.com/nahkd123/piano-tiles/issues"
+  },
+  "credits": {
+    "Piano C5 Sample": {
+      "author": "Teddy_Frost",
+      "url": "https://freesound.org/people/Teddy_Frost/sounds/334537/",
+      "license": "CC0"
+    }
+  },
   "scripts": {
     "test": "node dist/test.js"
   },
   "keywords": [
     "game"
   ],
-  "author": "nahkd123",
-  "license": "GPL-3.0-or-later",
   "devDependencies": {
     "css-loader": "^6.5.1",
     "style-loader": "^3.3.1",

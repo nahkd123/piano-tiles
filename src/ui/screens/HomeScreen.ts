@@ -5,6 +5,7 @@ import { Files } from "../../Files";
 import { BACK_BUTTON } from "../BackButton";
 import { QuickElement } from "../QuickElement";
 import { Screen } from "../Screen";
+import { AboutScreen } from "./AboutScreen";
 import { EditScreen } from "./EditScreen";
 import { ListingScreen } from "./ListingScreen";
 import { MapInfoScreen } from "./MapInfoScreen";
@@ -21,12 +22,14 @@ export class HomeScreen extends Screen {
         let newButton: HTMLDivElement;
         let importMIDI: HTMLDivElement;
         let importJSON: HTMLDivElement;
+        let aboutButton: HTMLDivElement;
 
         listing.append(
             browse = QuickElement.header("Browse", "Browse imported songs", true),
             newButton = QuickElement.header("New", "Create new song from nothing", true),
             importMIDI = QuickElement.header("Import MIDI", "Import MIDI file", true),
             importJSON = QuickElement.header("Import JSON", "Import JSON map", true),
+            aboutButton = QuickElement.header("About", "About nahkd's Piano Tiles", true),
         );
 
         browse.addEventListener("click", () => {
@@ -88,6 +91,11 @@ export class HomeScreen extends Screen {
                 screen.push();
                 BACK_BUTTON.show();
             }
+        });
+        aboutButton.addEventListener("click", () => {
+            let screen = new AboutScreen();
+            screen.push();
+            BACK_BUTTON.show();
         });
 
         this.contents.append(
