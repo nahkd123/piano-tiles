@@ -1,0 +1,36 @@
+.desktop-editor > .titlebar {
+    font-size: 1em;
+    background-color: #ffe7c7;
+}
+.desktop-editor > .titlebar > * {
+    vertical-align: top;
+}
+
+.desktop-editor > .titlebar > .back-button,
+.desktop-editor > .titlebar > .title,
+.desktop-editor > .titlebar > .options {
+    display: inline-block;
+    padding: 0.5em;
+}
+
+.desktop-editor > .titlebar > .back-button::before {
+    content: '<';
+}
+.desktop-editor > .titlebar > .title {
+    -webkit-user-modify: read-write;
+    -moz-user-modify: read-write;
+}
+
+.desktop-editor > canvas.playfield,
+.desktop-editor > canvas.piano-roll {
+    width: 100%;
+    touch-action: none;
+    display: block;
+}
+
+.desktop-editor > canvas.playfield {
+    height: 6em;
+}
+.desktop-editor > canvas.piano-roll {
+    height: calc(100% - 7.9em);
+}
