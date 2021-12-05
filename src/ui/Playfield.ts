@@ -156,9 +156,8 @@ export class Playfield {
     }
 
     checkFail() {
-        if (this.options.modifiers.length == 0) return true;
-        for (let i = 0; i < this.options.modifiers.length; i++) if (this.options.modifiers[i].onNoteMiss(this)) return true;
-        return false;
+        for (let i = 0; i < this.options.modifiers.length; i++) if (!this.options.modifiers[i].onNoteMiss(this)) return false;
+        return true;
     }
 
     renderCanvas() {
