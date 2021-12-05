@@ -10,6 +10,7 @@ import { PlayfieldScreen } from "./PlayfieldScreen";
 
 const SELECTED_INSET = 4;
 const LONG_TAP_MS = 500;
+const SMOOTH_SCROLL_THRESHOLD = 0.1;
 
 export class EditScreen extends Screen {
 
@@ -78,7 +79,7 @@ export class EditScreen extends Screen {
             const noteWidth = ptWidth / 4;
             const noteHeight = noteWidth * 1.75;
             
-            const interactedLane = Math.floor(eventDown.pageX / noteWidth);
+            const interactedLane = Math.floor((eventDown.pageX - rect.x) / noteWidth);
             const interactedOffset = (ptHeight - eventDown.pageY + rect.y) / noteHeight + this.scroll;
 
             const oldScroll = this.scroll;
@@ -146,8 +147,11 @@ export class EditScreen extends Screen {
                 if (this.ghostNote) {
                     this.map.notes.push(this.ghostNote);
                     this.map.notes.sort((a, b) => a.offset - b.offset);
-                } else if (!scrollLock) { /* TODO: Implement smooth scroll here */ }
-                else {
+                } else if (!scrollLock) {
+                    if (Math.abs(smoothScrollVelocity) < 2) return;
+                    this.smoothScrollTo = this.scroll + (smoothScrollVelocity / devicePixelRatio / ptHeight) * 32;
+                    this.processAnimation();
+                } else {
                     const note = this.map.notes.find(v =>
                         v.index == interactedLane &&
                         interactedOffset >= v.offset &&
@@ -180,7 +184,42 @@ export class EditScreen extends Screen {
             document.addEventListener("pointermove", pointerMove);
             document.addEventListener("pointerup", pointerUp);
         });
+        this.canvas.addEventListener("wheel", (event) => {
+            const ptHeight = this.canvas.offsetHeight;
+            const scrollAdd = (event.deltaY / ptHeight) * 2;
+            if (Math.abs(scrollAdd) > SMOOTH_SCROLL_THRESHOLD) this.smoothScrollTo = (scrollAdd > 0? Math.min(this.scroll, this.smoothScrollTo) : Math.max(this.scroll, this.smoothScrollTo)) - scrollAdd;
+            else {
+                this.scroll -= scrollAdd;
+                this.smoothScrollTo = this.scroll;
+            }
+            if (this.scroll < 0) this.scroll = 0;
+            this.processAnimation();
+        });
         console.log(this);
+    }
+
+    animating = false;
+    processAnimation() {
+        if (this.animating) return;
+        this.animating = true;
+        let render = () => {
+            let nextFrame = true;
+
+            // Smooth scrolling
+            if (this.smoothScrollTo < 0) this.smoothScrollTo = 0;
+            const smoothScrollDelta = this.smoothScrollTo - this.scroll;
+            if (Math.abs(smoothScrollDelta) <= 0.01) {
+                nextFrame = false;
+                this.scroll = this.smoothScrollTo;
+            } else {
+                this.scroll = this.smoothScrollTo * 0.1 + this.scroll * 0.9;
+            }
+
+            if (nextFrame) window.requestAnimationFrame(render);
+            else this.animating = false;
+            this.renderCanvas();
+        }
+        window.requestAnimationFrame(render);
     }
 
     constructPiano() {
